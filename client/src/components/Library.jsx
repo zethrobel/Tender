@@ -3,7 +3,7 @@ import axios from "axios";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import Find from "./Find";
-
+import SimpleExcelReader from './Excel';
 function LibraryTender(props) {
   const baseUrl = "http://localhost:4000";
   const [editingProduct, setEditingProduct] = useState(null); //this set the id of the clicked company and it's specific product
@@ -177,7 +177,8 @@ function LibraryTender(props) {
     <div>
       <div className="container py-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h4 className="products m-0">Add products here</h4>
+          <h4 className="products m-0">Add products here</h4> 
+          
           <div className="btn-group">
             <button className="btn btn-primary me-2">
               <a href="/rfq" className="text-decoration-none whitner">
@@ -206,7 +207,7 @@ function LibraryTender(props) {
                 name="companyName"
                 value={formData.companyName}
                 onChange={handleInputChange}
-                required
+                // required
               />
             </div>
             <div className="col-md-6">
@@ -217,7 +218,7 @@ function LibraryTender(props) {
                 name="item"
                 value={formData.item}
                 onChange={handleInputChange}
-                required
+                // required
               />
             </div>
             <div className="col-md-6">
@@ -228,7 +229,7 @@ function LibraryTender(props) {
                 name="price"
                 value={formData.price}
                 onChange={handleInputChange}
-                required
+                // required
               />
             </div>
             <div className="col-md-12">
@@ -245,26 +246,31 @@ function LibraryTender(props) {
               <button type="submit" className="btn btn-outline-success">
                 Add Product
               </button>
+              
             </div>
           </div>
         </form>
 
-        {/* Product List Display */}
-
-        {editingProduct && (
-          <div className="card edit-form-overlay">
-            <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center mb-2">
-              <h5>Edit Product</h5>
-              <button
-                className="btn-close btn-close-white  "
-                onClick={() => setEditingProduct(null)}
-              ></button>
-            </div>
-            <div className="card-body">
-              <form onSubmit={handleEditSubmit}>
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <input
+     
+    {editingProduct && (
+  <div className="modal fade show" style={{display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', fontSize:"initial"}}>
+    <div className="modal-dialog modal-lg">
+      <div className="modal-content">
+        <div className="modal-header bg-primary text-white">
+          <h5 className="modal-title">Edit Company Product</h5>
+          <button 
+            type="button" 
+            className="btn-close btn-close-white" 
+            onClick={() => setEditingProduct(null)}
+            aria-label="Close"
+          ></button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={handleEditSubmit}>
+            <div className="row g-3">
+              <div className="col-md-12">
+                <label className="form-label">Company Name</label>
+                <input
                       type="text"
                       className="form-control"
                       placeholder="Company Name"
@@ -272,55 +278,69 @@ function LibraryTender(props) {
                       value={editFormData.companyName}
                       onChange={handleEditFormChange}
                       disabled
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <input
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label" style={{fontWeight:"bold"}}>Item</label>
+                <input
                       type="text"
                       className="form-control"
-                      placeholder={formData.item || "Item"}
+                      placeholder={editFormData.item || "Items"}
                       name="item"
                       value={editFormData.item}
                       onChange={handleEditFormChange}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <input
+                  
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label" style={{fontWeight:"bold"}}>Price</label>
+                <input
                       type="number"
                       className="form-control"
                       placeholder={formData.price || "Price"}
                       name="price"
                       value={editFormData.price}
                       onChange={handleEditFormChange}
-                    />
-                  </div>
-                  <div className="col-md-12">
-                    <textarea
+                      min="0"
+                />
+              </div>
+
+              <div className="col-12">
+                <label className="form-label" style={{fontWeight:"bold"}}>Notes</label>
+                <textarea
                       className="form-control"
                       placeholder={editFormData.note || "notes"}
                       name="note"
                       value={editFormData.note}
                       onChange={handleEditFormChange}
                       rows="3"
-                    />
-                  </div>
-                  <div className="col-md-12 text-end">
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary me-2"
-                      onClick={() => setEditingProduct(null)}
-                    >
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      Update Product
-                    </button>
-                  </div>
-                </div>
-              </form>
+                />
+              </div>
             </div>
-          </div>
-        )}
+          </form>
+        </div>
+        <div className="modal-footer">
+          <button 
+            type="button" 
+            className="btn btn-secondary" 
+            onClick={() => setEditingProduct(null)}
+          >
+            Close
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-primary"
+            onClick={handleEditSubmit}
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
         <div className="product-list">
           <h4 className="mb-3 products">Saved Products</h4>
@@ -331,8 +351,11 @@ function LibraryTender(props) {
           ) : (
             library.map((company) => (
               <div key={company._id} className="card mb-3 shadow-sm">
-                <div className="card-header bg-light">
+                <div className="card-header bg-light d-flex justify-content-between align-items-center mb-4">
                   <h4 className="mb-0 card-bodyTitle">{company.companyName}</h4>
+                  <SimpleExcelReader 
+                  id={company._id}
+                  companyName={company.companyName} />
                 </div>
                 <div className="card-body">
                   <div className="row">

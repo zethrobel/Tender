@@ -6,7 +6,7 @@ import axios from "axios";
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import Find from "./Find";
-
+import SimpleExcelReader from "./Excel";
 function Quotation() {
   const baseUrl = "http://localhost:4000";
 
@@ -161,6 +161,7 @@ const handleDeleteButton = async(quoteId,itemId)=>{
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="products m-0">Add RFQ here</h4>
+        
         <div className="btn-group">
           <button className="btn btn-primary me-2">
             <a href="/rfq" className="text-decoration-none whitner">RFQ</a>
@@ -185,7 +186,7 @@ const handleDeleteButton = async(quoteId,itemId)=>{
               name="QuoteRequest"
               value={formData.QuoteRequest}
               onChange={handleInputChange}
-              required
+              // required
             />
           </div>
           <div className="col-md-6">
@@ -196,7 +197,7 @@ const handleDeleteButton = async(quoteId,itemId)=>{
               name="quotedItem"
               value={formData.quotedItem}
               onChange={handleInputChange}
-              required
+              // required
             />
           </div>
           <div className="col-md-6">
@@ -207,7 +208,7 @@ const handleDeleteButton = async(quoteId,itemId)=>{
               name="quotedPrice"
               value={formData.quotedPrice}
               onChange={handleInputChange}
-              required
+              // required
             />
           </div>
           <div className="col-md-12">
@@ -227,21 +228,27 @@ const handleDeleteButton = async(quoteId,itemId)=>{
           </div>
         </div>
       </form>
-      {
-        editingProduct && (
-          <div className="card edit-form-overlay">
-              <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center mb-2">
-              <h5>Edit Product</h5>
-              <button className="btn-close btn-close-white"
-              onClick={()=>setEditingProduct(null)}
-              ></button>
-              </div>
-
-              <div className="card-body">
-              <form onSubmit={handleEditSubmit}>
-                <div className="row g-3">
-                  <div className="col-md-6">
-            <input
+    
+       
+       {editingProduct && (
+  <div className="modal fade show" style={{display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', fontSize:"initial"}}>
+    <div className="modal-dialog modal-lg">
+      <div className="modal-content">
+        <div className="modal-header bg-primary text-white">
+          <h5 className="modal-title">Edit Quotation</h5>
+          <button 
+            type="button" 
+            className="btn-close btn-close-white" 
+            onClick={() => setEditingProduct(null)}
+            aria-label="Close"
+          ></button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={handleEditSubmit}>
+            <div className="row g-3">
+              <div className="col-md-12">
+                <label className="form-label">Quotation Request</label>
+                <input
               type="text"
               className="form-control"
               placeholder="Quote Request"
@@ -249,21 +256,25 @@ const handleDeleteButton = async(quoteId,itemId)=>{
               value={editFormData.QuoteRequest}
               onChange={handleEditFormChange}
               disabled
-            />
-          </div>
-          <div className="col-md-6">
-            <input
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label">Item</label>
+                <input
               type="text"
               className="form-control"
               placeholder="Quoted Item"
               name="quotedItem"
               value={editFormData.quotedItem}
              onChange={handleEditFormChange}
-              
-            />
-          </div>
-          <div className="col-md-6">
-            <input
+                  
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label">Price</label>
+                <input
               type="number"
               className="form-control"
               placeholder="Quoted Price"
@@ -271,37 +282,45 @@ const handleDeleteButton = async(quoteId,itemId)=>{
               value={editFormData.quotedPrice}
               onChange={handleEditFormChange}
               
-            />
-          </div>
-          <div className="col-md-12">
-            <textarea
-              className="form-control"
+                  min="0"
+                />
+              </div>
+
+              <div className="col-12">
+                <label className="form-label">Notes</label>
+                <textarea
+            className="form-control"
               placeholder="Quoted Note"
               name="quotedNote"
               value={editFormData.quotedNote}
               onChange={handleEditFormChange}
               rows="3"
-            />
-          </div>
-
-          <div className="col-md-12 text-end">
-          <button type="button"
-          className="btn btn-outline-secondary me-2"
-          onClick={()=>setEditingProduct(null)}>
-           Cancel
-          </button>
-
-          <button type="submit" className="btn btn-primary">Update quotation </button>
-
-          </div>
-                </div>
-              </form>
-
+                />
               </div>
+            </div>
+          </form>
+        </div>
+        <div className="modal-footer">
+          <button 
+            type="button" 
+            className="btn btn-secondary" 
+            onClick={() => setEditingProduct(null)}
+          >
+            Close
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-primary"
+            onClick={handleEditSubmit}
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
-          </div>
-        )
-      }
       <div className="product-list">
         <h4 className="mb-3 products">Saved Quotations</h4>
         {quotations.length === 0 ? (
@@ -309,8 +328,11 @@ const handleDeleteButton = async(quoteId,itemId)=>{
         ) : (
           quotations.map(quote => (
             <div key={quote._id} className="card mb-3 shadow-sm">
-              <div className="card-header bg-light">
+              <div className="card-header bg-light d-flex justify-content-between align-items-center mb-4">
                 <h4 className="mb-0 card-bodyTitle">{quote.QuoteRequest}</h4>
+                <SimpleExcelReader 
+                  id={quote._id}
+                  companyName={quote.QuoteRequest} />
               </div>
               <div className="card-body">
                 <div className="row">

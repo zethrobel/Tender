@@ -93,9 +93,7 @@ async function login() {
 async function startApp() {
   try {
     await login();
-    app.listen(4000, () => {
-      console.log("🚀 Server running on port 4000");
-    });
+    
   } catch (error) {
     console.error("Startup failed:", error);
     process.exit(1);
@@ -103,7 +101,7 @@ async function startApp() {
 }
 startApp();
 
-// API endpoint
+//API endpoint
 app.post("/search", async (req, res) => {
   const { keyWord, inviteLink } = req.body;
   if (!inviteLink || typeof inviteLink !== "string") {
@@ -502,6 +500,129 @@ app.put("/rfq",async(req,res)=>{
     res.status(500).json({error:"server error"})
   }
 })
+
+//get the data for the EXCEL file 
+
+app.post("/getExcel", async (req, res) => {
+  try {
+    const { companyId, companyName, excelData } = req.body;
+
+    // Run all checks in parallel
+    const [company, rfq, tender] = await Promise.all([
+      CompanyModel.findById(companyId),
+      RFQModel.findById(companyId),
+      OpenTenderModel.findById(companyId)
+    ]);
+
+    const foundIn = company ? "Company" : rfq ? "RFQ" : tender ? "OpenTender" : null;
+    
+    console.log(`${companyName} is found in ${foundIn || "unreachable"}`);
+    
+    if(foundIn) {
+      const Model = foundIn === "Company" ? CompanyModel : 
+                   foundIn === "RFQ" ? RFQModel : 
+                   OpenTenderModel;
+
+     const excelProducts = excelData.map(item => {
+  // Extract values from Excel with fallbacks
+     const extractedItem = item.Item || item.item || item['Item Description'] || 
+                       item['Item Description '] || item[' Item Description '] || 
+                       item[' Item Description'] || item['item'] || item[' item ']||item['item ']||item[' item'] ||
+                       item['Item'] || item[' Item ']||item['Item ']||item[' Item'] || 'Unknown Item';
+
+  // Convert price to number safely
+     const extractedPrice = Number(
+                       item['unit price '] || item[' unit price '] || item['unit price'] || item['price']||item[' price ']||item['price ']||item[' price']||
+                       item['Unit Price'] || item[' Unit Price '] || item['Unit price'] || item['Price']||item[' Price ']||item['Price ']||item[' Price']||
+                       item.Price || item.price || 0
+                       );
+
+  // Convert quantity to number safely (with all your field name variations)
+    const quantity = Number(
+                     item.Quantity || item[' quantity'] || item[' quantity '] || item['quantity'] ||
+                     item['quantity '] || item[' Quantity'] || item[' Quantity '] || item['Quantity'] ||
+                     item['Quantity '] || item.quantity || item.qty || item.Qty || 0
+  );
+
+  // Get unit with all variations
+    const unit = item.Unit || item.unit || item['Unit of Measure'] || 
+                 item['Unit '] || item[' unit '] || item['unit '] || item['unit']||item['Unit']||
+                 item[' Unit '] || item[' Unit of Measure'] || 
+                 item['Unit of Measure '] || item[' Unit of Measure '] || '';
+
+  // Calculate total price (with proper number handling)
+  const totalPrice = (extractedPrice * quantity).toFixed(2);
+
+  // Build the note without line breaks
+  const extractedNote = `Quantity: ${quantity}, Unit: ${unit.trim()}, Total Price: ${totalPrice}`;
+        // Then return the properly formatted object
+        if (foundIn === "Company") {
+          return {
+            item: extractedItem,
+            price: extractedPrice,
+            note: extractedNote
+          };
+        } else if (foundIn === "RFQ") {
+          return {
+            quotedItem: extractedItem,
+            quotedPrice: extractedPrice,
+            quotedNote: extractedNote
+          };
+        } else { // OpenTender
+          return {
+            bidItem: extractedItem,
+            bidPrice: extractedPrice,
+            bidNote: extractedNote
+          };
+        }
+      });
+
+      // Update operation differs per model
+      let updateOperation;
+      if (foundIn === "Company") {
+        updateOperation = {
+          $set: { companyName },
+          $push: { products: { $each: excelProducts } }
+        };
+      } else if (foundIn === "RFQ") {
+        updateOperation = {
+          $set: { QuoteRequest: companyName },
+          $push: { quotation: { $each: excelProducts } }
+        };
+      } else { // OpenTender
+        updateOperation = {
+          $set: { BidRequest: companyName },
+          $push: { bids: { $each: excelProducts } }
+        };
+      }
+
+      const result = await Model.findOneAndUpdate(
+        { _id: companyId },
+        updateOperation,
+        { upsert: true, new: true }
+      );
+      
+      console.log(`Added ${excelProducts.length} items to ${foundIn}`);
+      console.log("Saved data:", result);
+    }
+    
+    res.status(200).json({
+      message: "Data processed",
+      companyId,
+      companyName,
+      excelData,
+      foundIn
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.listen(4000, () => {
+      console.log("🚀 Server running on port 4000");
+    });
 
 
 
